@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <unistd.h>
-#include <strings.h>
+#include <string.h>
 #include <sys/stat.h>
 
 
