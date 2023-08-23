@@ -36,6 +36,6 @@ void prompt() {
         printf("<\e[0;36m%s\033[0m@\e[0;33m%s\033[0m:\e[0;35m~%s\033[0m> ", host_name, system_name, relative_path);
         return;
     } else {
-        printf("<\e[0;36m%s\033[0m@\e[0;33m%s\033[0m:\e[0;35m~%s\033[0m> ", host_name, system_name, current_working_direcotry);
+        printf("<\e[0;36m%s\033[0m@\e[0;33m%s\033[0m:\e[0;35m%s\033[0m> ", host_name, system_name, current_working_direcotry);
     }
 }

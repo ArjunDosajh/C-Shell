@@ -1,0 +1,15 @@
+peek /Applications/
+clear
+warp ~/data
+seek ~/data
+seek ~/
+seek data 
+seek a data
+seek find dire
+clear
+warp /
+warp ///////
+peek
+warp /home
+peek
+warp ///////////home///////////
