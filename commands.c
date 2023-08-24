@@ -1,6 +1,5 @@
 #include "headers.h"
 
-// char **all_commands_list = (char **)(malloc)(sizeof(char *) * 100);
 int number_of_commands = 1;
 
 int execute_command(char *command, int isAnd) {
@@ -9,14 +8,8 @@ int execute_command(char *command, int isAnd) {
     char *token = strtok_r(command, delimiters, &strtok_state);
     int hasPastEvents = 0;
     for(int i = 0; i < number_of_commands; i++) {
-        if(strcmp(token, "sleep") == 0) {
-            Sleep(strtok_state);
-        } else if(strcmp(token, "echo") == 0) {
-            Echo(strtok_state);
-        } else if(strcmp(token, "warp") == 0) {
+        if(strcmp(token, "warp") == 0) {
             Warp(strtok_state);
-        } else if(strcmp(token, "clear" )== 0) {
-            Clear();
         } else if(strcmp(token, "peek") == 0) {
             Peek(strtok_state);
         } else if(strcmp(token, "proclore") == 0) {
@@ -43,9 +36,34 @@ int execute_command(char *command, int isAnd) {
             Seek(strtok_state);
         }
         else {
-            // ERR: not in the list of all commands
-            printf("Invalid command: %s\n", token);
-            return -1;
+            char *unknownCommand = strdup(token);
+            token = strtok_r(NULL, " ", &strtok_state);
+            // create an empty array of strings
+            int num_args = 1;
+            char **args = (char **)(malloc)(sizeof(char *) * 100);
+            args[0] = strdup(unknownCommand);
+            while(token) {
+                args[num_args] = strdup(token);
+                token = strtok_r(NULL, " ", &strtok_state);
+                num_args++;
+            }
+
+            args[num_args] = NULL;
+
+            executeSystemCommand(args, isAnd);
+            
+            // pid_t childPid = fork();
+            // if (childPid == 0) {
+            //     execvp(unknownCommand, args);
+            //     printf("Invalid Command");
+            //     exit(1);
+            // } else if (childPid > 0) {
+            //     int status;
+            //     waitpid(childPid, &status, 0);
+            //     // Parent continues after command completes
+            // } else {
+            //     perror("Fork failed");
+            // }
         }
     }
     return hasPastEvents;
@@ -465,33 +483,6 @@ void Peek(char *strlok_state) {
         }
         token = strtok_r(NULL, " ", &strlok_state);
     }
-}
-
-void Clear() {
-    printf("\033[H\033[J");
-}
-
-void Sleep(char *strtok_state) {
-    char *token = strtok_r(NULL, " ", &strtok_state);
-    if(token == NULL) {
-        // ERR: no time specified
-        printf("No time specified\n");
-        return;
-    }
-    int sleep_time = atoi(token);
-    printf("Sleeping for %d seconds\n", sleep_time);
-    fflush(stdout);
-    sleep(sleep_time);
-}
-
-void Echo(char *strtok_state) {
-    char *token = strtok_r(NULL, " ", &strtok_state);
-    if(token == NULL) {
-        // ERR: no string specified
-        printf("No string specified\n");
-        return;
-    }
-    printf("%s\n", token);
 }
 
 void Warp(char *strtok_state) {

@@ -13,9 +13,12 @@
 #include <pwd.h>
 #include <grp.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #include "seek.h"
 #include "prompt.h"
 #include "commands.h"
 #include "peek.h"
+#include "system_commands.h"
 #endif
