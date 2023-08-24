@@ -39,7 +39,7 @@ void display_long_format(const char* dirname, struct dirent *entry) {
     }
 
     display_permissions(st.st_mode);
-    printf("%hu ", st.st_nlink);
+    printf("%lu ", st.st_nlink);
 
     struct passwd *pwd = getpwuid(st.st_uid);
     if (pwd) {
@@ -55,7 +55,7 @@ void display_long_format(const char* dirname, struct dirent *entry) {
         printf("%d ", st.st_gid);
     }
 
-    printf("%lld ", st.st_size);
+    printf("%ld ", st.st_size);
 
     char timebuf[64];
     struct tm *timeinfo = localtime(&st.st_mtime);

@@ -19,6 +19,8 @@ int execute_command(char *command, int isAnd) {
             Clear();
         } else if(strcmp(token, "peek") == 0) {
             Peek(strtok_state);
+        } else if(strcmp(token, "proclore") == 0) {
+            proclore(strtok_state);
         } else if(strcmp(token, "pastevents") == 0) {
             hasPastEvents = 1;
             token = strtok_r(NULL, " ", &strtok_state);
@@ -27,7 +29,7 @@ int execute_command(char *command, int isAnd) {
             }
             else if(strcmp(token, "purge") == 0) {
                 // clear the file
-                char past_events_file_path[PATH_MAX];
+                char past_events_file_path[1024];
                 strcpy(past_events_file_path, home_directory);
                 strcat(past_events_file_path, "/.pastevents.txt");
                 FILE *fp = fopen(past_events_file_path, "w");
@@ -61,7 +63,7 @@ void executePastEvent(char *strtok_state) {
         return;
     }
 
-    char past_events_file_path[PATH_MAX];
+    char past_events_file_path[1024];
     strcpy(past_events_file_path, home_directory);
     strcat(past_events_file_path, "/.pastevents.txt");
     FILE *file = fopen(past_events_file_path, "r");
@@ -98,7 +100,7 @@ void executePastEvent(char *strtok_state) {
 }
 
 void printPastEvents(char *strtok_state) {
-    char past_events_file_path[PATH_MAX];
+    char past_events_file_path[1024];
     strcpy(past_events_file_path, home_directory);
     strcat(past_events_file_path, "/.pastevents.txt");
 
@@ -148,6 +150,94 @@ void printPastEvents(char *strtok_state) {
     close(fd);
 }
 
+void proclore(char *strtok_state) {
+    char *token = strtok_r(NULL, " ", &strtok_state);
+    int pid;
+    if(token == NULL) {
+        // ERR: no pid specified
+        pid = getpid();
+    } else {
+        pid = atoi(token);
+    }
+
+    char path[1024];
+    FILE *file;
+    char buffer[4096];
+
+    // Get Process Status and TTY
+    sprintf(path, "/proc/%d/stat", pid);
+    file = fopen(path, "r");
+    if (!file) {
+        perror("Error opening status file");
+        return;
+    }
+
+    char state;
+    int tty_nr, pgrp;
+    if (fgets(buffer, sizeof(buffer), file)) {
+        sscanf(buffer, "%*d %*s %c %*d %d %d", &state, &pgrp, &tty_nr);
+    } else {
+        perror("Error reading from status file");
+        return;
+    }
+    fclose(file);
+
+    char buf[1024];    FILE *f;
+    int proc_pid, proc_ppid, proc_pgrp, proc_session, proc_tty_nr, proc_tpgid;
+    char proc_comm[1024], proc_state;
+    long int proc_vsize;
+    sprintf(path, "/proc/%d/stat", pid);
+    f = fopen(path, "r");
+    if (!f) {
+        perror("Failed to open process stat");
+        return;
+    }
+    if (!fgets(buf, sizeof(buf), f)) {
+        perror("Failed to read process stat");
+        fclose(f);
+        return;
+    }
+    fclose(f);
+    sscanf(buf,
+           "%d %s %c %d %d %d %d %d %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s "
+           "%*s %*s %*s %*s %*s %*s %*s %*s %*s %ld",
+           &proc_pid, proc_comm, &proc_state, &proc_ppid, &proc_pgrp, &proc_session,
+           &proc_tty_nr, &proc_tpgid, &proc_vsize);
+
+    char *foreground_background = "";
+    if (proc_tpgid == proc_pgrp) {
+        foreground_background = "+";
+    }
+
+    // Get Memory Info
+    sprintf(path, "/proc/%d/statm", pid);
+    file = fopen(path, "r");
+    if (!file) {
+        perror("Error opening memory info file");
+        return;
+    }
+
+    int virtualMemory;
+    fscanf(file, "%d", &virtualMemory);
+    fclose(file);
+
+    // Get Executable Path
+    sprintf(path, "/proc/%d/exe", pid);
+    ssize_t len = readlink(path, buffer, sizeof(buffer)-1);
+    if (len != -1) {
+        buffer[len] = '\0';
+    } else {
+        perror("Error reading executable path");
+        return;
+    }
+
+    printf("PID: %d\n", pid);
+    printf("Process Status: %c%s\n", state, foreground_background);
+    printf("Process Group: %d\n", pgrp);
+    printf("Virtual Memory: %d pages\n", virtualMemory);
+    printf("Executable Path: %s\n", buffer);
+}
+
 void Seek(char *strtok_state) {
     char *token = strtok_r(NULL, " ", &strtok_state);
     char search[1024];
@@ -172,32 +262,38 @@ void Seek(char *strtok_state) {
                 return;
             }
         } else if (readFind == 0) {
-            printf("find is: %s\n", token);
             // search term
             strcpy(search, token);
             readFind = 1;
         } else if (readTarget == 0) {
-            printf("target is: %s\n", token);
             // target directory
             if (token[0] == '~') {
-                strcpy(target_directory, home_directory);
+                // strcpy(target_directory, home_directory);
+                target_directory = strdup(home_directory);
                 strcat(target_directory, token + 1);
             } else if (token[0] == '-') {
                 // previous directory
                 strcpy(target_directory, previous_working_directory);
             } else if (token[0] == '.' && token[1] == '.') {
                 // parent directory
-                char temp[1024];
-                strcpy(temp, current_working_direcotry);
-                char *last_slash = strrchr(temp, '/');
-                *last_slash = '\0';
-                strcpy(target_directory, temp);
+                int lastSlash = -1;
+                for(int i=0; i<strlen(current_working_direcotry); i++) {
+                    if(i < strlen(current_working_direcotry) - 1 && current_working_direcotry[i] == '/') {
+                        lastSlash = i;
+                    }
+                }
+                target_directory = strdup(current_working_direcotry);
+                if(lastSlash != -1) {
+                    target_directory[lastSlash + 1] = '\0';
+                }
             } else if (token[0] == '.' && token[1] == '\0') {
                 // current directory
-                strcpy(target_directory, current_working_direcotry);
+                target_directory = strdup(current_working_direcotry);
+                // strcpy(target_directory, current_working_direcotry);
             } else if (token[0] == '/') {
                 // absolute path
-                strcpy(target_directory, token);
+                // strcpy(target_directory, token);
+                target_directory = strdup(token);
             } else {
                 if (token[0] == '.' && token[1] == '/') token += 2;
                 // relative path
@@ -205,8 +301,7 @@ void Seek(char *strtok_state) {
                 strcpy(temp, current_working_direcotry);
                 if (temp[strlen(temp) - 1] != '/') strcat(temp, "/");
                 strcat(temp, token);
-                strcpy(target_directory, temp);
-                printf("target directory is: %s\n", target_directory);
+                target_directory = strdup(temp);
             }
             readTarget = 1;
         }
@@ -219,9 +314,24 @@ void Seek(char *strtok_state) {
         return;
     }
 
-    printf("Yayy");
+    printf("Searching for %s in %s\n", search, target_directory);
 
-    // search_directory(target_directory, search, search_files, search_dirs, exec_flag);
+    // check if the target directory is valid
+    struct stat st;
+    int result = stat(target_directory, &st);
+
+    if (result == 0) {
+        if (S_ISDIR(st.st_mode)) {
+            search_directory(target_directory, search, search_files, search_dirs, exec_flag);
+            printf("hmmm");
+        } else {
+            printf("Target directory does not exits!.\n");
+            return;
+        }
+    } else {
+        perror("Error");
+        return;
+    }
 }
 
 void Peek(char *strlok_state) {
@@ -266,7 +376,7 @@ void Peek(char *strlok_state) {
             // if valid, print the contents of the directory
             // if invalid, print error
             // if no path is specified, print the contents of the current directory
-            char path[PATH_MAX];
+            char path[1024];
             if(token == NULL) {
                 strcpy(path, current_working_direcotry);
             } else if(token[0] == '~') {
@@ -279,7 +389,7 @@ void Peek(char *strlok_state) {
             }
             else if(token[0] == '.' && token[1] == '.') {
                 // parent directory
-                char temp[PATH_MAX];
+                char temp[1024];
                 strcpy(temp, current_working_direcotry);
                 char *last_slash = strrchr(temp, '/');
                 *last_slash = '\0';
@@ -293,7 +403,7 @@ void Peek(char *strlok_state) {
             } else{
                 if(token[0] == '.' && token[1] == '/') token += 2;
                 // relative path
-                char temp[PATH_MAX];
+                char temp[1024];
                 strcpy(temp, current_working_direcotry);
                 if(temp[strlen(temp) - 1] != '/') strcat(temp, "/");
                 strcat(temp, token);
@@ -386,7 +496,7 @@ void Echo(char *strtok_state) {
 
 void Warp(char *strtok_state) {
     char *token = strtok_r(NULL, " ", &strtok_state);
-    char new_path[PATH_MAX];
+    char new_path[1024];
 
     if(token == NULL) {
         strcpy(new_path, home_directory);
@@ -416,7 +526,7 @@ void Warp(char *strtok_state) {
         }
          else if(token[0] == '.' && token[1] == '.') {
             // parent directory
-            char temp[PATH_MAX];
+            char temp[1024];
             strcpy(temp, current_working_direcotry);
             char *last_slash = strrchr(temp, '/');
             *last_slash = '\0';
@@ -430,7 +540,7 @@ void Warp(char *strtok_state) {
         } else{
             if(token[0] == '.' && token[1] == '/') token += 2;
             // relative path
-            char temp[PATH_MAX];
+            char temp[1024];
             strcpy(temp, current_working_direcotry);
             if(temp[strlen(temp) - 1] != '/') strcat(temp, "/");
             strcat(temp, token);
@@ -456,7 +566,7 @@ void Warp(char *strtok_state) {
 }
 
 void saveInPastEvents(char *inputCopy2) {
-    char past_events_file_path[PATH_MAX];
+    char past_events_file_path[1024];
     strcpy(past_events_file_path, home_directory);
     strcat(past_events_file_path, "/.pastevents.txt");
     FILE *fp = fopen(past_events_file_path, "r");

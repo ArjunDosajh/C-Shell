@@ -3,6 +3,7 @@
 
 // create an array of string which contains all the possible commands
 
+void proclore(char *strtok_state);
 void printPastEvents(char *strtok_state);
 void executePastEvent(char *strtok_state);
 void Seek(char *strtok_state);

@@ -10,7 +10,7 @@ int main()
     while (1)
     {
         // SPEC 1 --> Print appropriate prompt with username, systemname and directory before accepting input
-        // char home_directory[PATH_MAX], host_name[PATH_MAX], system_name[PATH_MAX], current_working_direcotry[PATH_MAX];
+        // char home_directory[1024], host_name[1024], system_name[1024], current_working_direcotry[1024];
 
         prompt();
         char input[4096];
