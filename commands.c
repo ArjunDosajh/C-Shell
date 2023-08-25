@@ -66,12 +66,6 @@ int execute_command(char *command, int isAnd) {
 }
 
 void executePastEvent(char *strtok_state, int command_no) {
-    char *token = strtok_r(NULL, " ", &strtok_state);
-    if(token == NULL) {
-        printf("Please give command number to execute!\n");
-        return;
-    }
-    // int command_no = atoi(token);
     if (command_no == 0) {
         printf("Command number should be an integer between 1 and 15 (inclusive)!\n");
         return;
