@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 #include "seek.h"
 #include "prompt.h"

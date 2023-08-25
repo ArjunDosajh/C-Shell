@@ -9,6 +9,17 @@ int init_terminal()
         return 1;
     }
 
+    // create .pastevents.txt if it does not exist in the home directory in read write mode
+    char pastevents_path[1024];
+    strncpy(pastevents_path, home_directory, 1024);
+    strcat(pastevents_path, "/.pastevents.txt");
+    int fd = open(pastevents_path, O_CREAT | O_RDWR, 0644);
+    if (fd == -1)
+    {
+        perror("open() error");
+        return 1;
+    }
+
     strncpy(current_working_direcotry, home_directory, 1024);
     strncpy(previous_working_directory, home_directory, 1024);
 

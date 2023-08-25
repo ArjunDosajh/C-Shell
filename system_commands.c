@@ -1,6 +1,8 @@
 #include "headers.h"
 
 pid_t backgroundProcesses[100];
+// make an array of strings to store the commands and malloc memory to it
+char **backgroundCommands;
 
 void checkBackgroundProcesses() {
     for (int i = 0; i < bgIndex; i++) {
@@ -46,6 +48,7 @@ void executeSystemCommand(char *command[], int isBackground) {
         if (isBackground) {
             printf("Process started in background with PID: %d\n", pid);
             backgroundProcesses[bgIndex++] = pid;
+            // backgroundCommands[bgIndex++] = strdup(command[0]);
         } else {
             waitpid(pid, NULL, 0);
         }

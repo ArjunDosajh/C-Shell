@@ -4,7 +4,7 @@ int number_of_commands = 1;
 
 int execute_command(char *command, int isAnd) {
     char *strtok_state;
-    char delimiters[] = " ";
+    char delimiters[] = " \t";
     char *token = strtok_r(command, delimiters, &strtok_state);
     int hasPastEvents = 0;
     for(int i = 0; i < number_of_commands; i++) {
@@ -38,7 +38,6 @@ int execute_command(char *command, int isAnd) {
         else {
             char *unknownCommand = strdup(token);
             token = strtok_r(NULL, " ", &strtok_state);
-            // create an empty array of strings
             int num_args = 1;
             char **args = (char **)(malloc)(sizeof(char *) * 100);
             args[0] = strdup(unknownCommand);
@@ -51,19 +50,6 @@ int execute_command(char *command, int isAnd) {
             args[num_args] = NULL;
 
             executeSystemCommand(args, isAnd);
-            
-            // pid_t childPid = fork();
-            // if (childPid == 0) {
-            //     execvp(unknownCommand, args);
-            //     printf("Invalid Command");
-            //     exit(1);
-            // } else if (childPid > 0) {
-            //     int status;
-            //     waitpid(childPid, &status, 0);
-            //     // Parent continues after command completes
-            // } else {
-            //     perror("Fork failed");
-            // }
         }
     }
     return hasPastEvents;
@@ -267,10 +253,8 @@ void Seek(char *strtok_state) {
     while (token != NULL) {
         if (token[0] == '-') {
             if (strcmp(token, "-d") == 0) {
-                search_dirs = 1;
                 search_files = 0;
             } else if (strcmp(token, "-f") == 0) {
-                search_files = 1;
                 search_dirs = 0;
             } else if (strcmp(token, "-e") == 0) {
                 exec_flag = 1;
@@ -332,7 +316,7 @@ void Seek(char *strtok_state) {
         return;
     }
 
-    printf("Searching for %s in %s\n", search, target_directory);
+    // printf("Searching for %s in %s\n", search, target_directory);
 
     // check if the target directory is valid
     struct stat st;
@@ -340,8 +324,38 @@ void Seek(char *strtok_state) {
 
     if (result == 0) {
         if (S_ISDIR(st.st_mode)) {
-            search_directory(target_directory, search, search_files, search_dirs, exec_flag);
-            printf("hmmm");
+            char single_file_path[1024];
+            int fileCount = search_directory(target_directory, search, search_files, search_dirs, exec_flag, single_file_path);
+            char directory_path[1024];
+            strcpy(directory_path, home_directory);
+            strcat(directory_path, single_file_path + 1);
+            struct stat st;
+            int result = stat(directory_path, &st);
+
+
+            if (exec_flag == 1 && fileCount == 1) {
+                if (result == 0) {
+                    if (S_ISDIR(st.st_mode)) {
+                        // warp to that directory
+                        strcpy(previous_working_directory, current_working_direcotry);
+                        strcpy(current_working_direcotry, directory_path);
+                    }
+                } else {
+                    perror("Error");
+                    return;
+                }
+                FILE *fp = fopen(single_file_path, "r");
+                char ch;
+                if (fp) {
+                    while ((ch = fgetc(fp)) != EOF) {
+                        printf("%c", ch);
+                    }
+                    printf("\n");
+                    fclose(fp);
+                } else {
+                    printf("Missing permissions for task!\n");
+                }
+            }
         } else {
             printf("Target directory does not exits!.\n");
             return;
@@ -427,6 +441,14 @@ void Peek(char *strlok_state) {
                 strcat(temp, token);
                 strcpy(path, temp);
             }
+
+            DIR *dir = opendir(path);
+            if(!dir) {
+                // ERR: invalid path
+                perror("peek ");
+                return;
+            }
+
             struct stat st;
             int result = stat(path, &st);
 
@@ -537,6 +559,13 @@ void Warp(char *strtok_state) {
             strcat(temp, token);
             strcpy(new_path, temp);
         }
+
+        DIR *dir = opendir(new_path);
+        if(!dir) {
+            perror("Warp ");
+            return;
+        }
+
         struct stat st;
         int result = stat(new_path, &st);
 
@@ -609,6 +638,17 @@ void tokeniseCommands(char *input) {
 
     char delimiters[] = ";&";
     char *commandToken = strtok(input, delimiters);
+
+    // check for valid command, ignore spaces, tabs
+    if(commandToken == NULL) return;
+    int validCommand = 0;
+    for(int i=0; i<strlen(commandToken); i++) {
+        if(isalnum(commandToken[i])) {
+            validCommand = 1;
+            break;
+        }
+    }
+    if(validCommand == 0) return;
 
     int commandEndPosition = 0, numTokens = 0, hasPastEvents = 0;
     
