@@ -4,6 +4,11 @@ int number_of_commands = 1;
 
 int execute_command(char *command, int isAnd)
 {
+    /*this command accepts a single command at a time and redirects it to other functions
+    or files where the command gets executed. It returns 1 if the command is a pastevents command
+    and returns 0 otherwise.
+    */
+    
     char *strtok_state;
     char delimiters[] = " \t";
     char *token = strtok_r(command, delimiters, &strtok_state);
@@ -11,30 +16,34 @@ int execute_command(char *command, int isAnd)
     int isEmptyCommand = 1;
     for (int i = 0; i < number_of_commands; i++)
     {
-
         if (strcmp(token, "warp") == 0)
         {
+            // change directory (cd)
             Warp(strtok_state);
         }
         else if (strcmp(token, "peek") == 0)
         {
+            // list directories and files (ls)
             Peek(strtok_state);
         }
         else if (strcmp(token, "proclore") == 0)
         {
+            // process information (ps)
             proclore(strtok_state);
         }
         else if (strcmp(token, "pastevents") == 0)
         {
+            // past events (history)
             hasPastEvents = 1;
             token = strtok_r(NULL, " ", &strtok_state);
             if (token == NULL)
             {
+                // printing the last 15 commands
                 printPastEvents(strtok_state);
             }
             else if (strcmp(token, "purge") == 0)
             {
-                // clear the file
+                // deleting the past events file
                 char past_events_file_path[1024];
                 strcpy(past_events_file_path, home_directory);
                 strcat(past_events_file_path, "/.pastevents.txt");
@@ -43,6 +52,7 @@ int execute_command(char *command, int isAnd)
             }
             else if (strcmp(token, "execute") == 0)
             {
+                // executing the command which is stored at the 15 - command_no line in the .pastevents file
                 char *token = strtok_r(NULL, " ", &strtok_state);
                 if (token == NULL)
                 {
@@ -64,10 +74,12 @@ int execute_command(char *command, int isAnd)
         }
         else if (strcmp(token, "seek") == 0)
         {
+            // search for files and directories (find)
             Seek(strtok_state);
         }
         else
         {
+            // command is not implemented manually, so trying to execute the requested command using execvp
             char *unknownCommand = strdup(token);
             token = strtok_r(NULL, " ", &strtok_state);
             int num_args = 1;
@@ -80,7 +92,8 @@ int execute_command(char *command, int isAnd)
                 num_args++;
             }
 
-            args[num_args] = NULL;
+            // args is always NULL terminated
+            args[num_args] = NULL; // args contains the command name and all the arguments of the command, eg: ["ls", "-a", "-l", NULL]
 
             executeSystemCommand(args, isAnd);
         }
@@ -141,13 +154,7 @@ void printPastEvents(char *strtok_state)
     strcpy(past_events_file_path, home_directory);
     strcat(past_events_file_path, "/.pastevents.txt");
 
-    // open the file using open()
     int fd = open(past_events_file_path, O_CREAT | O_RDWR, 0644);
-    if (fd == -1)
-    {
-        perror("Error");
-        return;
-    }
 
     // read the contents of the file
     char buffer[4096];
@@ -161,7 +168,6 @@ void printPastEvents(char *strtok_state)
     // if the file is empty, print "No past events"
     if (num_bytes_read == 0)
     {
-        printf("No past events\n");
         return;
     }
 
@@ -203,11 +209,12 @@ void proclore(char *strtok_state)
     int pid;
     if (token == NULL)
     {
-        // ERR: no pid specified
+        // get the pid of current shell
         pid = getpid();
     }
     else
     {
+        // convert to integer
         pid = atoi(token);
     }
 
