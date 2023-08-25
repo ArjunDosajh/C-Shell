@@ -28,7 +28,17 @@ int execute_command(char *command, int isAnd) {
                 FILE *fp = fopen(past_events_file_path, "w");
                 fclose(fp);
             } else if(strcmp(token, "execute") == 0) {
-                executePastEvent(strtok_state);
+                char *token = strtok_r(NULL, " ", &strtok_state);
+                if(token == NULL) {
+                    printf("Please give command number to execute!\n");
+                    return;
+                }
+                int command_no = atoi(token);
+                if (command_no == 0) {
+                    printf("Command number should be an integer between 1 and 15 (inclusive)!\n");
+                    return;
+                }
+                executePastEvent(strtok_state, command_no);
             } else {
                 printf("Invalid command for pastevents\n");
             }
@@ -55,13 +65,13 @@ int execute_command(char *command, int isAnd) {
     return hasPastEvents;
 }
 
-void executePastEvent(char *strtok_state) {
+void executePastEvent(char *strtok_state, int command_no) {
     char *token = strtok_r(NULL, " ", &strtok_state);
     if(token == NULL) {
         printf("Please give command number to execute!\n");
         return;
     }
-    int command_no = atoi(token);
+    // int command_no = atoi(token);
     if (command_no == 0) {
         printf("Command number should be an integer between 1 and 15 (inclusive)!\n");
         return;
@@ -171,18 +181,11 @@ void proclore(char *strtok_state) {
     // Get Process Status and TTY
     sprintf(path, "/proc/%d/stat", pid);
     file = fopen(path, "r");
-    if (!file) {
-        perror("Error opening status file");
-        return;
-    }
 
     char state;
     int tty_nr, pgrp;
     if (fgets(buffer, sizeof(buffer), file)) {
         sscanf(buffer, "%*d %*s %c %*d %d %d", &state, &pgrp, &tty_nr);
-    } else {
-        perror("Error reading from status file");
-        return;
     }
     fclose(file);
 
@@ -216,10 +219,6 @@ void proclore(char *strtok_state) {
     // Get Memory Info
     sprintf(path, "/proc/%d/statm", pid);
     file = fopen(path, "r");
-    if (!file) {
-        perror("Error opening memory info file");
-        return;
-    }
 
     int virtualMemory;
     fscanf(file, "%d", &virtualMemory);
@@ -230,9 +229,6 @@ void proclore(char *strtok_state) {
     ssize_t len = readlink(path, buffer, sizeof(buffer)-1);
     if (len != -1) {
         buffer[len] = '\0';
-    } else {
-        perror("Error reading executable path");
-        return;
     }
 
     printf("PID: %d\n", pid);
@@ -316,9 +312,6 @@ void Seek(char *strtok_state) {
         return;
     }
 
-    // printf("Searching for %s in %s\n", search, target_directory);
-
-    // check if the target directory is valid
     struct stat st;
     int result = stat(target_directory, &st);
 
@@ -366,10 +359,6 @@ void Seek(char *strtok_state) {
 }
 
 void Peek(char *strlok_state) {
-    // peek is similar to the ls command in terminal
-    // it takes in flags (-a and -l) and path as arguments and prints the contents of the directory
-    // if no path is specified, it prints the contents of the current directory
-
     char *token = strtok_r(NULL, " ", &strlok_state);
     int showHidden = 0, showList = 0;
     while(1) {
@@ -401,11 +390,6 @@ void Peek(char *strlok_state) {
                 return;
             }
         } else {
-            // path is present
-            // check if the path is valid
-            // if valid, print the contents of the directory
-            // if invalid, print error
-            // if no path is specified, print the contents of the current directory
             char path[1024];
             if(token == NULL) {
                 strcpy(path, current_working_direcotry);
@@ -478,7 +462,6 @@ void Peek(char *strlok_state) {
                         if (showList) {
                             display_long_format(dirname, namelist[i]);
                         } else {
-                            // print files in white, dir in blue and execs in green
                             struct stat st;
                             char filepath[512];
                             snprintf(filepath, sizeof(filepath), "%s/%s", dirname, namelist[i]->d_name);
@@ -637,7 +620,6 @@ void saveInPastEvents(char *inputCopy2) {
 
 void tokeniseCommands(char *input) {
     // example input = "this;is&a;new&command"
-
     char inputCopy2[4096];
     strcpy(inputCopy2, input);
     inputCopy2[strlen(inputCopy2) - 1] = '\n';
@@ -648,7 +630,6 @@ void tokeniseCommands(char *input) {
     char delimiters[] = ";&";
     char *commandToken = strtok(input, delimiters);
 
-    // check for valid command, ignore spaces, tabs
     if(commandToken == NULL) return;
     int validCommand = 0;
     for(int i=0; i<strlen(commandToken); i++) {
@@ -667,7 +648,6 @@ void tokeniseCommands(char *input) {
         numTokens++;
         commandEndPosition += strlen(commandToken);
         char delimiter = inputCopy[commandEndPosition];
-        // printf("Command: %s, Delimiter: %c, tokenLen: %lu\n", token, delimiter, strlen(token));
         if(delimiter == '&') {
             isAnd = 1;
         }

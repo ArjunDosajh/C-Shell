@@ -5,7 +5,7 @@
 
 void proclore(char *strtok_state);
 void printPastEvents(char *strtok_state);
-void executePastEvent(char *strtok_state);
+void executePastEvent(char *strtok_state, int command_number);
 void Seek(char *strtok_state);
 void Peek(char *strtok_state);
 void Warp(char *strtok_state);
