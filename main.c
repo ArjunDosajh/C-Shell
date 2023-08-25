@@ -2,7 +2,6 @@
 
 int main()
 {
-    char **backgroundCommands = (char **)malloc(100 * sizeof(char *));
     if(init_terminal() == 1) {
         printf("init_terminal() error");
         return 1;

@@ -16,6 +16,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <ctype.h>
+#include <time.h>
 
 #include "seek.h"
 #include "prompt.h"

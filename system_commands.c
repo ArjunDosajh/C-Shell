@@ -1,24 +1,29 @@
 #include "headers.h"
 
-pid_t backgroundProcesses[100];
-// make an array of strings to store the commands and malloc memory to it
-char **backgroundCommands;
+typedef struct {
+    pid_t pid;
+    char commandName[1024];
+} BackgroundProcess;
+
+BackgroundProcess bgProcesses[100];
+int bgIndex = 0;
 
 void checkBackgroundProcesses() {
     for (int i = 0; i < bgIndex; i++) {
         int status;
-        pid_t result = waitpid(backgroundProcesses[i], &status, WNOHANG);
+        pid_t result = waitpid(bgProcesses[i].pid, &status, WNOHANG);
 
         if (result != 0) {
             if (WIFEXITED(status)) {
-                printf("Background process with PID %d completed\n", backgroundProcesses[i]);
+                printf("%s exitted normally (%d)\n", bgProcesses[i].commandName, bgProcesses[i].pid);
             } else if (WIFSIGNALED(status)) {
-                printf("Background process with PID %d was terminated by a signal\n", backgroundProcesses[i]);
+                printf("%s was terminated by a signal (%d)\n", bgProcesses[i].commandName, bgProcesses[i].pid);
+
             }
 
-            // Shift the array to remove the completed PID
+            // Shift the array to remove the completed process info
             for (int j = i; j < bgIndex - 1; j++) {
-                backgroundProcesses[j] = backgroundProcesses[j + 1];
+                bgProcesses[j] = bgProcesses[j + 1];
             }
             bgIndex--;
             i--; // Adjust index after shifting elements
@@ -28,7 +33,8 @@ void checkBackgroundProcesses() {
 
 void executeSystemCommand(char *command[], int isBackground) {
     pid_t pid = fork();
-
+    time_t start_time, end_time;
+    start_time = time(NULL);
     if (pid < 0) {
         perror("Fork failed");
         exit(1);
@@ -46,11 +52,21 @@ void executeSystemCommand(char *command[], int isBackground) {
         }
     } else {
         if (isBackground) {
-            printf("Process started in background with PID: %d\n", pid);
-            backgroundProcesses[bgIndex++] = pid;
-            // backgroundCommands[bgIndex++] = strdup(command[0]);
+            printf("%d\n", pid);
+            bgProcesses[bgIndex].pid = pid;
+            strncpy(bgProcesses[bgIndex].commandName, command[0], 1024 - 1);
+            bgProcesses[bgIndex].commandName[1024 - 1] = '\0';  // Ensure null termination
+            bgIndex++;
         } else {
             waitpid(pid, NULL, 0);
+            end_time = time(NULL);
+            double difference = difftime(end_time, start_time);
+            if(difference > 2.00) {
+                long_process_time = (int) difference;
+                strcpy(long_process, command[0]);
+            } else {
+                long_process_time = difference;
+            }
         }
     }
 }

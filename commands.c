@@ -332,7 +332,6 @@ void Seek(char *strtok_state) {
             struct stat st;
             int result = stat(directory_path, &st);
 
-
             if (exec_flag == 1 && fileCount == 1) {
                 if (result == 0) {
                     if (S_ISDIR(st.st_mode)) {
@@ -374,9 +373,8 @@ void Peek(char *strlok_state) {
     char *token = strtok_r(NULL, " ", &strlok_state);
     int showHidden = 0, showList = 0;
     while(1) {
-        if(token && token[0] == '-') {
+        if(token && token[0] == '-' && token[1] != '\0') {
             // flags can be -a -l, -l -a, -a, -l, -al, -la
-
             if(strlen(token) == 2) {
                 if(token[1] == 'a') showHidden = 1;
                 else if(token[1] == 'l') showList = 1;
@@ -411,7 +409,14 @@ void Peek(char *strlok_state) {
             char path[1024];
             if(token == NULL) {
                 strcpy(path, current_working_direcotry);
-            } else if(token[0] == '~') {
+            } else if(token[0] == '-' && token[1] == '\0') {
+                if(strlen(previous_working_directory) == 0) {
+                    printf("No previous working directory\n");
+                    return;
+                }
+                strcpy(path, previous_working_directory);
+            }
+            else if(token[0] == '~') {
                 strcpy(path, home_directory);
                 strcat(path, token + 1);
                 printf("%s\n", path);
@@ -534,6 +539,10 @@ void Warp(char *strtok_state) {
             strcpy(new_path, home_directory);
             strcat(new_path, token + 1);
         } else if(token[0] == '-') {
+            if(strlen(previous_working_directory) == 0) {
+                printf("No previous working directory\n");
+                return;
+            }
             // previous directory
             strcpy(new_path, previous_working_directory);
         }
