@@ -31,12 +31,12 @@ int execute_command(char *command, int isAnd) {
                 char *token = strtok_r(NULL, " ", &strtok_state);
                 if(token == NULL) {
                     printf("Please give command number to execute!\n");
-                    return;
+                    return 0;
                 }
                 int command_no = atoi(token);
                 if (command_no == 0) {
                     printf("Command number should be an integer between 1 and 15 (inclusive)!\n");
-                    return;
+                    return 0;
                 }
                 executePastEvent(strtok_state, command_no);
             } else {
