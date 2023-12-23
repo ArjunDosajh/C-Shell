@@ -1,36 +1,60 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/76mHqLr5)
-## How to run
-```
-make
-./a.out
-```
+# Custom Shell Project
 
-## Description
+<img src="README_assets/custom_shell.png">
 
-### ```main.c```
-- This file keeps the terminal running in an infinite loop
+## Overview
+This project involves building a custom shell in C, focusing on modular programming and encompassing a variety of shell functionalities such as system calls, command parsing, file and directory operations, process management, and networking.
 
-### ```commands.c```
-- This file contains the major part of the project
-- Most commands are executed in this file itself and some commands which require a large amount of code have their separate files
+## Features
 
-### ```peek.c```
-- `peek` command lists all the files and directories in the specified directories in lexicographic order (default peek does not show hidden files).
+### 1. Modular Code Structure
+- **Implementation**: Divides the codebase into multiple C files, each dedicated to specific functionalities, enhancing code readability, maintainability, and scalability.
 
-### ```seek.c```
-- `seek` command looks for a file/directory in the specified target directory (or current if no directory is specified). It returns a list of relative paths (from target directory) of all matching files/directories (files in green and directories in blue) separated with a newline character.
+### 2. System Calls
+- **Implementation**: Executes system commands in both foreground (waiting for completion) and background (allowing concurrent execution).
 
-### ```prompt.c```
-- This file prints a new prompt int the shell
+### 3. Command Parsing
+- **Implementation**: Parses commands separated by ';' (sequential execution) or '&' (background execution), involving input string tokenization.
 
-### ```system_commands.c```
-- This file handles the execution of commands usign execvp. 
-- It also handles the execution of these commands in the background
+### 4. Directory Navigation (`warp`)
+- **Implementation**: Changes the current working directory with support for relative, absolute paths, and special flags (".", "..", "~"), using system calls like `chdir`.
 
-### ```global_variables.c```
-- All the global variables have been initialised in this file
+### 5. File Listing (`peek`)
+- **Implementation**: Lists files and directories with options for hidden files (`-a`) and detailed information (`-l`), using system calls like `opendir` and `readdir`.
 
-## Disclaimer
-I have used chatgpt and copilot for some minor and repetitive code implementations. I am aware of the entire logic and implementation of the project.
+### 6. Command History (`pastevents`)
+- **Implementation**: Stores and retrieves recent commands, maintaining a history buffer and excluding redundant entries like `pastevents` itself.
 
-## Assumptions
+### 7. Process Management
+- **Implementation**: Manages foreground and background processes, including custom commands for process information (`proclore`) and control (`fg`, `bg`), using system calls and signal handling.
+
+### 8. I/O Redirection and Piping
+- **Implementation**: Supports redirection (`>`, `>>`, `<`) and piping (`|`) between commands, involving file descriptor manipulation and pipe creation.
+
+### 9. Networking (`iMan`)
+- **Implementation**: Fetches manual pages from the internet using TCP sockets, HTTP requests, and response parsing.
+
+## Additional Considerations
+
+- **Error Handling**: Robust error handling to prevent crashes, checking system call return values and handling exceptions.
+- **User Interface**: User-friendly interface with color coding and clear error messages.
+- **Assumptions**: Simplifies implementation by assuming no whitespace in paths/names and no background processing for user-defined commands.
+
+## Installation
+1. Clone the repository.
+2. Use the provided `makefile` to compile the code.
+3. Run `./a.out` to start the shell.
+
+## Usage
+- Execute system or custom commands like `warp`, `peek`, `pastevents`.
+- Use `;` or `&` to separate multiple commands.
+- Navigate directories, list files, manage processes, and more.
+
+## Contributing
+Contributions to improve the shell or add new features are welcome. Please maintain the modular structure of the code.
+
+## License
+This project is distributed under the MIT License.
+
+## Author
+Arjun Dosajh
